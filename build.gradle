@@ -1,0 +1,52 @@
+group 'org.nrg.xnat'
+version '2.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'war'
+apply plugin: 'application'
+
+def vSpring = "4.3.9.RELEASE"
+def vJackson = "2.8.9"
+def vTomcat = "8.0.44"
+def vServletApi = "3.1.0"
+def vJstl = "1.2"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+mainClassName = "org.nrg.xnat.web.application.XnatApplication"
+
+task addedStartScripts(type: CreateStartScripts) {
+    mainClassName = "org.nrg.xnat.web.application.XnatShutdown"
+    applicationName = "shutdown-xnat"
+    outputDir = new File(project.buildDir, 'scripts')
+    classpath = jar.outputs.files + project.configurations.runtime
+}
+
+project.getTasksByName(ApplicationPlugin.TASK_START_SCRIPTS_NAME, true).each { task -> task.dependsOn(addedStartScripts) }
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    compile "org.springframework:spring-webmvc:${vSpring}"
+    compile "org.apache.commons:commons-lang3:3.5"
+    compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
+    compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
+    compile "javax.servlet:jstl:${vJstl}"
+
+    compile "org.apache.tomcat.embed:tomcat-embed-core:${vTomcat}"
+    compile "org.apache.tomcat.embed:tomcat-embed-logging-juli:${vTomcat}"
+    compile "org.apache.tomcat.embed:tomcat-embed-jasper:${vTomcat}"
+    compile "org.apache.tomcat:tomcat-jasper:${vTomcat}"
+    compile "org.apache.tomcat:tomcat-jasper-el:${vTomcat}"
+    compile "org.apache.tomcat:tomcat-jsp-api:${vTomcat}"
+
+    providedRuntime "javax.servlet:javax.servlet-api:${vServletApi}"
+    compile 'javax.servlet:javax.servlet-api:3.1.0'
+    testCompile "junit:junit:4.12"
+}
