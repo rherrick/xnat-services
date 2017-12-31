@@ -1,7 +1,10 @@
 package org.nrg.xnat.web.initialization;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
+@SuppressWarnings("unused")
+@Slf4j
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
     @Override
     protected Class<?>[] getRootConfigClasses() {

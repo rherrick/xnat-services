@@ -1,4 +1,6 @@
+*.log
 /.gradle
 /.idea
 /build
+/out
 /tomcat.8080

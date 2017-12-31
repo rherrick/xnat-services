@@ -1,26 +1,82 @@
-group 'org.nrg.xnat'
-version '2.0-SNAPSHOT'
+buildscript {
+    ext {
+        vXnat = "1.7.5-SNAPSHOT"
+    }
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            url "https://nrgxnat.jfrog.io/nrgxnat/libs-release"
+            name "XNAT Release Repository"
+        }
+        maven {
+            url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot"
+            name "XNAT Snapshot Repository"
+        }
+    }
+    dependencies {
+        classpath "com.github.kongchen:swagger-maven-plugin:3.1.+"
+        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
+        classpath "io.franzbecker:gradle-lombok:1.10"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
+        classpath "io.swagger:swagger-core:1.5.+"
+    }
+}
 
-apply plugin: 'java'
-apply plugin: 'war'
-apply plugin: 'application'
+plugins {
+    id "application"
+    id "com.github.zhurlik.swagger" version "0.2"
+    id "com.palantir.git-version" version "0.10.0"
+    id "eclipse"
+    id "groovy"
+    id "idea"
+    id "io.franzbecker.gradle-lombok" version "1.11"
+    id "io.spring.dependency-management" version "1.0.4.RELEASE"
+    id "jacoco"
+    id "java"
+    id "maven"
+    id "maven-publish"
+    id "war"
+}
 
-def vSpring = "4.3.9.RELEASE"
-def vJackson = "2.8.9"
-def vTomcat = "8.0.44"
+group "org.nrg.xnat"
+version "2.0-SNAPSHOT"
+
+def vSpring = "4.3.13.RELEASE"
+def vJackson = "2.9.3"
+def vCommonsLang = "3.7"
+def vTomcat70 = "7.0.82"
+def vTomcat80 = "8.0.48"
+def vTomcat85 = "8.5.24"
+def vTomcat90 = "9.0.2"
+def vTomcat = vTomcat70
+def vSlf4j = "1.7.25"
+def vLog4j2 = "2.9.1"
 def vServletApi = "3.1.0"
 def vJstl = "1.2"
+def vJUnit = "1.0.2"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 mainClassName = "org.nrg.xnat.web.application.XnatApplication"
+applicationName = "xnat-start"
 
+distributions {
+    main {
+        baseName = "xnat-web"
+    }
+}
 task addedStartScripts(type: CreateStartScripts) {
     mainClassName = "org.nrg.xnat.web.application.XnatShutdown"
-    applicationName = "shutdown-xnat"
-    outputDir = new File(project.buildDir, 'scripts')
-    classpath = jar.outputs.files + project.configurations.runtime
+    applicationName = "xnat-shutdown"
+    outputDir = new File(project.buildDir, "scripts")
+    classpath = jar.outputs.files + project.configurations.runtimeClasspath
 }
 
 project.getTasksByName(ApplicationPlugin.TASK_START_SCRIPTS_NAME, true).each { task -> task.dependsOn(addedStartScripts) }
@@ -32,21 +88,27 @@ repositories {
 }
 
 dependencies {
-    compile "org.springframework:spring-webmvc:${vSpring}"
-    compile "org.apache.commons:commons-lang3:3.5"
-    compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
-    compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
-    compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
-    compile "javax.servlet:jstl:${vJstl}"
+    implementation "org.springframework:spring-webmvc:${vSpring}"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
+    implementation "com.fasterxml.jackson.core:jackson-core:${vJackson}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.3"
+    implementation "org.apache.commons:commons-lang3:${vCommonsLang}"
+    implementation "javax.servlet:jstl:${vJstl}"
 
-    compile "org.apache.tomcat.embed:tomcat-embed-core:${vTomcat}"
-    compile "org.apache.tomcat.embed:tomcat-embed-logging-juli:${vTomcat}"
-    compile "org.apache.tomcat.embed:tomcat-embed-jasper:${vTomcat}"
-    compile "org.apache.tomcat:tomcat-jasper:${vTomcat}"
-    compile "org.apache.tomcat:tomcat-jasper-el:${vTomcat}"
-    compile "org.apache.tomcat:tomcat-jsp-api:${vTomcat}"
+    implementation "org.slf4j:jcl-over-slf4j:${vSlf4j}"
+    implementation "org.apache.logging.log4j:log4j-api:${vLog4j2}"
+    implementation "org.apache.logging.log4j:log4j-core:${vLog4j2}"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${vLog4j2}"
 
-    providedRuntime "javax.servlet:javax.servlet-api:${vServletApi}"
-    compile 'javax.servlet:javax.servlet-api:3.1.0'
-    testCompile "junit:junit:4.12"
+    implementation "org.apache.tomcat.embed:tomcat-embed-core:${vTomcat}"
+    implementation "org.apache.tomcat.embed:tomcat-embed-logging-juli:${vTomcat}"
+    implementation "org.apache.tomcat.embed:tomcat-embed-jasper:${vTomcat}"
+    implementation "org.apache.tomcat:tomcat-jasper:${vTomcat}"
+    implementation "org.apache.tomcat:tomcat-jasper-el:${vTomcat}"
+    implementation "org.apache.tomcat:tomcat-jsp-api:${vTomcat}"
+
+    providedCompile "javax.servlet:javax.servlet-api:${vServletApi}"
+
+    testImplementation "org.junit.platform:junit-platform-commons:${vJUnit}"
 }
