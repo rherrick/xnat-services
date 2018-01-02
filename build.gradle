@@ -20,6 +20,7 @@ buildscript {
     }
     dependencies {
         classpath "com.github.kongchen:swagger-maven-plugin:3.1.+"
+        classpath "com.netflix.nebula:gradle-ospackage-plugin:4.5.1"
         classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:0.8.0"
         classpath "io.franzbecker:gradle-lombok:1.10"
@@ -41,12 +42,14 @@ plugins {
     id "java"
     id "maven"
     id "maven-publish"
+    id "nebula.deb" version "4.5.1"
     id "war"
 }
 
 group "org.nrg.xnat"
 version "2.0-SNAPSHOT"
 
+def fullName = "xnat-web"
 def vSpring = "4.3.13.RELEASE"
 def vJackson = "2.9.3"
 def vCommonsLang = "3.7"
@@ -69,14 +72,67 @@ applicationName = "xnat-start"
 
 distributions {
     main {
-        baseName = "xnat-web"
+        baseName = fullName
     }
 }
+
 task addedStartScripts(type: CreateStartScripts) {
     mainClassName = "org.nrg.xnat.web.application.XnatShutdown"
     applicationName = "xnat-shutdown"
     outputDir = new File(project.buildDir, "scripts")
     classpath = jar.outputs.files + project.configurations.runtimeClasspath
+}
+
+task createDeb(type: Deb) {
+    packageName = fullName
+    version = project.version
+    release = 1
+
+    configurationFile("/etc/defaults/xnat")
+    // installUtils file("scripts/deb/utils.sh")
+    // preInstall file("scripts/deb/preInstall.sh")
+    // postInstall file("scripts/deb/postInstall.sh")
+    // preUninstall file("scripts/deb/preUninstall.sh")
+    // postUninstall file("scripts/deb/postUninstall.sh")
+
+    requires "postgresql", "9.5"
+
+    into "/var/lib/xnat"
+
+    from(jar.outputs.files) {
+        into "lib"
+    }
+    from(configurations.runtimeClasspath) {
+        into "lib"
+    }
+    from("src/main/scripts") {
+        into "bin"
+        // exclude "database"
+        fileMode 0550
+    }
+    from("src/main/resources") {
+        fileType CONFIG.set(NOREPLACE.flag())
+        into "conf"
+    }
+    from("home") {
+        createDirectoryEntry = true
+        fileMode 0500
+        into "home"
+    }
+    // from("endorsed") {
+    //     into "/usr/share/tomcat/endorsed"
+    // }
+
+    link("/etc/init.d/xnat", "/var/lib/xnat/bin/xnat-start")
+
+    customField "Build-Host", "http://mycihost"
+    customField([
+            "Commit-ID": "deadbeef",
+            "Owner"    : "John Doe <johndoe@sweetdomain.io>"
+    ])
+    customFields << [
+            "Build-Job": "XnatProject"
+    ]
 }
 
 project.getTasksByName(ApplicationPlugin.TASK_START_SCRIPTS_NAME, true).each { task -> task.dependsOn(addedStartScripts) }
